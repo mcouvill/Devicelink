@@ -1,0 +1,722 @@
+
+The DeviceLink interface is meant to provide the third-party software with the
+current condition of the player's aircraft as well as allow an unified method of
+connecting alternative operating controls.
+
+DeviceLink utilizes the UDP protocol to transfer the data. In this network, IL2
+plays a part of the server. The external application sends a query packet, in
+reply, IL2 sends back one (or several) packets containing the query result.
+Proposing using the protocol within a single computer, ar a local network, no
+data encoding is used and data integrity CRC-checks are not taken. Packets do
+contain only symbolic information, the allowed range is (0x21-0x7e). A query
+packet is preceded with an 'R' symbol, the resulting packed is preceded with an
+'A'; followed by one or several "key"/"value" pairs. The "key" is the number
+identifying a parameter. The "value" may be omitted or consist of a number of
+copies. The semantics of the "value" depends on the parameter itself. The "keys"
+are preceded with a '/', the "values" are preceded with a '\'. If a "value" is
+to contain one of these symbols, it is preceded with a '\'. There are two types
+of "keys" - (get) requiring to return the value of the given parameter, and
+(set) setting the given parameter. The (get) keys are even while the latter ones
+are odd. "Get-keys" may contain values for the specified parameter, the answer
+packet returns the "value" with the "get-key". "Set-keys" may contain values for
+the parameter, but with these the reply contains none.
+
+Ex.:
+
+key 40 - altimeter
+key 81 - power
+Query packet           - R/40/81\1.6e-1
+  Return the aircraft altitude, and set the power to 1.6e-1.
+Reply (answer) packet  - A/40\534.3
+  Returns the current altitude 534.3 meters MSL.
+
+The DeviceLink interface is activated if the [DeviceLink] section is found in the
+conf.ini file. Within this section, "port" specifies the number of UDP port for
+data transfer.
+Using "host" parameter one can specify the address of the network interface in
+use.
+The "IPS" parameter restricts the allowed client IP addresses. If the "IPS"
+parameter is not found in the section, any IP address is allowed to connect.
+
+Ex.:
+
+[DeviceLink]
+port=10000
+IPS=10.1.1.3 10.1.1.8
+
+Port number is 10000, allowed clients are 10.1.1.3 and 10.1.1.8.
+
+
+
+1. Parameters - common.
+
+
+
+Version
+  2   get() 
+      return: string containing DeviceLink version id.
+
+accessible get
+  4   get(parameter key)
+      return: parameter key and 1 or 0 - wheither this key has get method
+              allowed in the current context (I.e. allowed during the mission
+              but not while mission is loading).
+
+accessible set
+  6   get(parameter key)
+      return: parameter key and 1 or 0 - wheither this parameter has set method
+              allowed.
+
+time of day
+  20  get()
+      return: float[hours] - current tome of the day within the game.
+
+plane
+  22  get()
+      return: string identifying the player plane.
+
+cockpits
+  24  get()
+      return: int, quantity of cockpits in the player aircraft.
+
+cockpit cur
+  26  get()
+      return: int, number of the cockpit the player is currently in, starting
+              with 0. The cockpit # 0 is always the pilot in command's cockpit.
+              Returns -1 if the camera is on an external view.
+
+engines
+  28  get()
+      return: int, quantity of engines on the player aircraft.
+
+
+
+2. Parameters - instruments readings.
+
+
+
+In current version, this section is disabled while playing the game over the
+net.
+
+speedometer_indicated 
+  30  get()
+      return: float [km/h]      +0.00   +inf
+
+variometer            
+  32  get()
+      return: float [m/s]       -inf    +inf
+
+slip                  
+  34  get()
+      return: float [deg.]      -45.00  +45.00
+
+turn
+  36  get()
+      return: float [undefined] -1.00   +1.00
+              turn indicator
+
+angular_speed         
+  38  get()
+      return: float [deg./s]    -inf    +inf
+
+altimeter             
+  40  get()
+      return: float [m]         +0.00   +inf
+
+azimuth               
+  42  get()
+      return: float [deg.]      +0.00   +359.(9)
+
+beacon_azimuth        
+  44  get()
+      return: float [deg.]      +0.00   +359.(9)
+
+roll                  
+  46  get()
+      return: float [deg.]      -180.00 +180.00
+
+pitch                 
+  48  get()
+      return: float [deg.]      -90.00  +90.00
+
+fuel
+  50  get()
+      return: float [kg.]      +0.00   +inf
+
+overload              
+  52  get()
+      return: float [undefined] -inf    +inf
+
+shake_level           
+  54  get()
+      return: float [undefined] +0.00   +1.00
+
+gear_pos_l
+  56  get()
+      return: float [undefined] +0.00   +1.00
+              left gear "leg" position
+
+gear_pos_r
+  58  get()
+      return: float [undefined] +0.00   +1.00
+              right gear "leg" position
+
+gear_pos_c
+  60  get()
+      return: float [undefined] +0.00   +1.00
+              central gear position
+
+magneto               
+  62  get(int - engine idx)
+      return: int   [undefined] +0      +3
+
+rpm                   
+  64  get(int - engine idx)
+      return: float [rpm]       +0.00   +inf
+
+manifold              
+  66  get(int - engine idx)
+      return: float [bar]       +0.00   +inf
+
+temp_oilin            
+  68  get(int - engine idx)
+      return: float [deg.C]     -273.00 +inf
+
+temp_oilout           
+  70  get(int - engine idx)
+      return: float [deg.C]     -273.00 +inf
+
+temp_water            
+  72  get(int - engine idx)
+      return: float [deg.C]     -273.00 +inf
+
+temp_cylinders        
+  74  get(int - engine idx)
+      return: float [deg.C]     -273.00 +inf
+
+
+
+3. Parameters - controls.
+
+
+
+3.1. Analog controls (joy axis).
+"Value" is limited to -1.00 +1.00.
+
+
+
+Power
+  80  get() return: float
+  81  set(float)
+
+Flaps 
+  82  get() return: float
+  83  set(float)
+
+Aileron      
+  84  get() return: float
+  85  set(float)
+
+Elevator     
+  86  get() return: float
+  87  set(float)
+
+Rudder       
+  88  get() return: float
+  89  set(float)
+
+Brakes       
+  90  get() return: float
+  91  set(float)
+
+Prop Pitch        
+  92  get() return: float
+  93  set(float)
+
+Aileron Trim
+  94  get() return: float
+  95  set(float)
+
+Elevator Trim
+  96  get() return: float
+  97  set(float)
+
+Rudder Trim
+  98  get() return: float
+  99  set(float)
+
+
+
+3.2. Discontinuous.
+If the set method contains no value, calling it is equal to depressing the
+corresponding hotkey once.
+
+
+
+Level Stabilizer
+ 100  get() return: 1 or 0
+ 101  set()
+
+Toggle Engine
+ 103  set()
+
+Boost (WEP) On/Off
+ 104  get() return: 1 or 0
+ 105  set()
+
+Magneto Next
+ 106  get() return: int 0 - 3
+ 107  set()
+
+Magneto Prev.
+ 108  get() return: int 0 - 3
+ 109  set()
+
+Supercharger Next Stage
+ 110  get() return: int
+ 111  set()
+
+Supercharger Prev. Stage
+ 112  get() return: int
+ 113  set()
+
+Select All Engines
+ 115  set()
+
+Unselect All Engines
+ 117  set()
+
+Select Left Engines
+ 119  set()
+
+Select Right Engines 
+ 121  set()
+
+Select Engine #1
+ 123  set()
+
+Select Engine #2
+ 125  set()
+
+Select Engine #3
+ 127  set()
+
+Select Engine #4
+ 129  set()
+
+Select Engine #5
+ 131  set()
+
+Select Engine #6
+ 133  set()
+
+Select Engine #7
+ 135  set()
+
+Select Engine #8
+ 137  set()
+
+Toggle Selection for All Engines
+ 139  set()
+
+Toggle Left Engines
+ 141  set()
+
+Toggle Right Engines
+ 143  set()
+
+Select/Unselect Engine #1
+ 145  set()
+
+Select/Unselect Engine #2
+ 147  set()
+
+Select/Unselect Engine #3
+ 149  set()
+
+Select/Unselect Engine #4
+ 151  set()
+
+Select/Unselect Engine #5
+ 153  set()
+
+Select/Unselect Engine #6
+ 155  set()
+
+Select/Unselect Engine #7
+ 157  set()
+
+Select/Unselect Engine #8
+ 159  set()
+
+Fire Extinguisher
+ 161  set()
+
+Feather Prop.
+ 162  get() return: int
+ 163  set()
+
+Gear Up/Down
+ 164  get() return: float
+ 165  set()
+
+Rise Gear manually
+ 167  set()
+
+Lower Gear manually
+ 169  set()
+
+Cowl or Armor Flaps
+ 171  set()
+
+Airbrake
+ 172  get() return: int 0 - 1
+ 173  set()
+
+Lock Tail Wheel
+ 174  get() return: int 0 - 1
+ 175  set()
+
+Jettison Droptanks
+ 177  set()
+
+Attach/Detach Aircraft
+ 179  set()
+
+Weapon 1
+ 180  get() return: int 0 - 1
+ 181  set(int) 1 - start 0 - stop
+
+Weapon 2
+ 182  get() return: int 0 - 1
+ 183  set(int) 1 - start 0 - stop
+
+Weapon 3
+ 184  get() return: int 0 - 1
+ 185  set(int) 1 - start 0 - stop
+
+Weapon 4
+ 186  get() return: int 0 - 1
+ 187  set(int) 1 - start 0 - stop
+
+Weapon 1+2
+ 188  get() return: int 0 - 1
+ 189  set(int) 1 - start 0 - stop
+
+Toggle Gun Pods On/Off
+ 190  get() return: int 0 - 1
+ 191  set()
+
+Toggle Sight Mode (Auto)
+ 193  set()
+
+Increase Sight Distance
+ 195  set()
+
+Decrease Sight Distance
+ 197  set()
+
+Adjust Sight Control to Right
+ 199  set()
+
+Adjust Sight Control to Left  
+ 201  set()
+
+Increase Sight Altitude
+ 203  set()
+
+Decrease Sight Altitude
+ 205  set()
+
+Increase Sight Velocity  
+ 207  set()
+
+Decrease Sight Velocity
+ 209  set()
+
+Toggle Wing Fold
+ 210  get() return: int 0 - 1
+ 211  set()
+
+Open/Close Canopy
+ 212  get() return: int 0 - 1
+ 213  set()
+
+Toggle Arresting Hook
+ 214  get() return: int 0 - 1
+ 215  set()
+
+Toggle Chocks
+ 216  get() return: int 0 - 1
+ 217  set()
+
+Gunner Fire
+ 220  get() return: int 0 - 1
+ 221  set(int) 1 - start 0 - stop
+
+Gunner Move
+ 223  set(int,int,int)
+      Increment of mouse movement along the 3 axis. The third one is not used
+      currently.
+
+
+
+4. Parameters - camera control.
+
+
+
+4.1. Discontinuous.
+If the set method contains no value, calling it is equal to depressing the
+corresponding hotkey once.
+
+
+
+Pilot or Gunner Position
+  300 get() return: int current player cockpit idx
+  301 set()
+
+Jump to Cockpit #1 (Pilot)
+  303 set()
+
+Jump to Cockpit #2
+  305 set()
+
+Jump to Cockpit #3
+  307 set()
+
+Jump to Cockpit #4
+  309 set()
+
+Jump to Cockpit #5
+  311 set()
+
+Jump to Cockpit #6
+  313 set()
+
+Jump to Cockpit #7
+  315 set()
+
+Jump to Cockpit #8
+  317 set()
+
+Jump to Cockpit #9
+  319 set()
+
+Jump to Cockpit #10
+  321 set()
+
+FOV 90
+  323 set()
+
+FOV 85
+  325 set()
+
+FOV 80
+  327 set()
+
+FOV 75
+  329 set()
+
+FOV 70
+  331 set()
+
+FOV 65
+  333 set()
+
+FOV 60
+  335 set()
+
+FOV 55
+  337 set()
+
+FOV 50
+  339 set()
+
+FOV 45
+  341 set()
+
+FOV 40
+  343 set()
+
+FOV 35
+  345 set()
+
+FOV 30
+  347 set()
+
+Toggle FOV
+  348 get() return: float, current FOV, degrees.
+  349 set()
+
+Increase FOV
+  351 set()
+
+Decrease FOV
+  353 set()
+
+Cockpit View
+  355 set()
+
+No Cockpit View
+  357 set()
+
+External View
+  359 set()
+
+Next Friendly View
+  361 set()
+
+Next Enemy View
+  363 set()
+
+Fly-by View
+  365 set()
+
+Padlock Enemy
+  367 set()
+
+Padlock Friendly
+  369 set()
+
+Padlock Enemy Ground
+  371 set()
+
+Padlock Friendly Ground
+  373 set()
+
+Padlock Next
+  375 set()
+
+Padlock Previous
+  377 set()
+
+Instant View Forward with Padlock
+  479 set(int) 1 - start 0 - stop
+
+External Padlock, Enemy Air
+  381 set()
+
+External Padlock, Friendly Air
+  383 set()
+
+External Padlock, closest Enemy Air
+  385 set()
+
+External Padlock, Enemy Ground
+  387 set()
+
+External Padlock, Friendly Ground
+  389 set()
+
+External Padlock, closest Enemy Ground
+  391 set()
+
+Chase View
+  393 set()
+
+Next Friendly Chase View
+  395 set()
+
+Next Enemy Chase View
+  397 set()
+
+Toggle Gunsight
+  399 set()
+
+Toggle Seat Position
+  447 set()
+
+4.2. Analogue.
+
+
+
+TrackIR 
+   11 set(float,float,float) 
+      Sets the camera turn angles - yaw, pitch, and roll [deg.].
+      The roll param is ignored.
+
+
+
+5. Parameters - misc.
+
+
+
+5.1. Discontinuous.
+If the set method contains no value, calling it is equal to depressing the
+corresponding hotkey once.
+
+
+
+Toggle Autopilot
+  401 set()
+
+Toggle Level Autopilot
+  403 set()
+
+Bail Out
+  405 set()
+
+Tinted Reticle Dimmer (German Planes)
+  407 set()
+
+Cockpit Lights
+  409 set()
+
+Toggle Nav. Lights
+  411 set()
+
+Toggle Landing Light
+  413 set()
+
+Toggle Wingtip Smoke
+  415 set()
+
+Toggle Map
+  417 set()
+
+Chat
+  419 set()
+
+Online Rating
+  421 set(int) 1 - show 0 - hide
+
+Next Ratings Page
+  443 set()
+
+Toggle Speed Bar
+  423 set()
+
+Toggle Icon Types
+  425 set()
+
+Toggle Mirrors Show/Mode
+  427 set()
+
+Quick Start/Save Track
+  429 set()
+
+Radio Mute Key
+  431 set(int) 1 - start 0 - stop
+
+Mute
+  445 set()
+
+Radio Channel Switch
+  433 set()
+
+Accelerate Time x2/x4/x8
+  435 set()
+
+Normal Time
+  437 set()
+
+Decelerate Time x2/x4
+  439 set()
+
+PauseGame
+  441 set()
+
+Time Skip
+  449 set()
+
+
